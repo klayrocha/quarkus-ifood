@@ -12,7 +12,7 @@ import com.klayrocha.ifood.cadastro.model.Restaurant;
 @ValidDTO
 public class AddRestaurantDTO implements DTO {
 
-	@Pattern(regexp = "[0-9]{2}\\.[0-9]{3}\\.[0-9]{3}\\/[0-9]{4}\\-[0-9]{2}")
+	//@Pattern(regexp = "[0-9]{2}\\.[0-9]{3}\\.[0-9]{3}\\/[0-9]{4}\\-[0-9]{2}")
 	@NotNull
 	public String identification;
 

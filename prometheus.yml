@@ -1,0 +1,16 @@
+global:
+  scrape_interval:     15s 
+  evaluation_interval: 15s 
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+
+rule_files:
+
+scrape_configs:
+  - job_name: 'ifood-register'
+    scrape_interval:     5s 
+    static_configs:
+    - targets: ['host.docker.internal:8080']

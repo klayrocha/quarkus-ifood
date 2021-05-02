@@ -7,6 +7,8 @@ import java.util.stream.Stream;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -22,6 +24,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -31,6 +36,8 @@ import org.eclipse.microprofile.openapi.annotations.security.OAuthFlows;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
 
 import com.klayrocha.ifood.cadastro.dto.AddDishDTO;
 import com.klayrocha.ifood.cadastro.dto.AddRestaurantDTO;
@@ -58,8 +65,15 @@ public class RestaurantResource {
 
 	@Inject
 	DishMapper dishMapper;
+	
+	@Inject
+    @Channel("restaurant")
+    Emitter<String> emitter;
 
 	@GET
+	@Counted(name = "Quantity of search for restaurants")
+	@SimplyTimed(name = "Simple Time")
+	@Timed(name = "Full time search")
 	public List<RestaurantDTO> findAll() {
 		Stream<Restaurant> restaurants = Restaurant.streamAll();
 		return restaurants.map(r -> restaurantMapper.toRestaurantDTO(r)).collect(Collectors.toList());
@@ -70,7 +84,10 @@ public class RestaurantResource {
 	@APIResponse(responseCode = "201", description = "If restaurant is successfully registered")
 	@APIResponse(responseCode = "400", content = @Content(schema = @Schema(allOf = ConstraintViolationResponse.class)))
 	public Response add(@Valid AddRestaurantDTO dto) {
-		restaurantMapper.toRestaurant(dto).persist();
+		Restaurant restaurant = restaurantMapper.toRestaurant(dto);
+		restaurant.persist();
+		
+		emitter.send(JsonbBuilder.create().toJson(restaurant));
 		return Response.status(Status.CREATED).build();
 	}
 
